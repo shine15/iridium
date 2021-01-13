@@ -1,0 +1,21 @@
+# mac autosaving file
+.DS_Store
+*.py[co]
+
+# Compiled python files
+*.py[co]
+
+# Vim
+*.swp
+*.swo
+
+# PyCharm custom settings
+.idea
+*.egg-info
+iridium/examples/.ipynb_checkpoints
+docs/build
+.coverage
+*.so
+build
+*.c
+*.pkl
