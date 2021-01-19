@@ -2,35 +2,8 @@ import os
 import platform
 from setuptools import (
     find_packages,
-    setup,
-    Extension
+    setup
 )
-from Cython.Build import cythonize
-from numpy import get_include
-
-ext_modules = [
-    Extension('iridium.lib.trade',
-              ['iridium/lib/trade.pyx'],
-              include_dirs=['.', get_include()]
-              ),
-    Extension('iridium.lib.order',
-              ['iridium/lib/order.pyx'],
-              include_dirs=['.', get_include()]
-              ),
-    Extension('iridium.lib.forex',
-              ['iridium/lib/forex.pyx'],
-              extra_compile_args=['-fopenmp'],
-              extra_link_args=['-fopenmp', '-Wl,-rpath,/usr/local/opt/gcc/lib/gcc/9/'],
-              include_dirs=['.', get_include()]
-              ),
-    Extension('iridium.lib.instrument',
-              ['iridium/lib/instrument.pyx']
-              )
-]
-
-if platform.system() == 'Darwin':
-    os.environ["CC"] = "gcc-9"
-    os.environ["CXX"] = "gcc-9"
 
 setup(
     name='iridium',
@@ -45,10 +18,7 @@ setup(
     author='Yu Su',
     author_email='super.iridium77@gmail.com',
     packages=find_packages(include=['iridium', 'iridium.*']),
-    ext_modules=cythonize(ext_modules),
     include_package_data=True,
-    package_data={root.replace(os.sep, '.'): ['*.pyx', '*.pxd'] for root, dirnames, filenames in os.walk('iridium')
-                  if '__pycache__' not in root},
     license='Apache 2.0',
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
