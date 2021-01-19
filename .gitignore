@@ -19,3 +19,4 @@ docs/build
 build
 *.c
 *.pkl
+*.pyd

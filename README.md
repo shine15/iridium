@@ -4,13 +4,17 @@ MacOS https://conda.io/projects/conda/en/latest/user-guide/install/macos.html
 
 # Install Dependencies
 conda config --append channels conda-forge <br/>
-conda create --name iridium <br/>
+conda create --name iridium python=3.7 <br/>
 conda activate iridium <br/>
-conda install pytables <br/>
+conda install -c conda-forge pytables <br/>
 conda install pandas <br/>
 conda install -c conda-forge jupyterlab
 
+# Dependencies
+https://github.com/mrjbq7/ta-lib
+
 # PyPI
+Go to project root directory <br/>
 pip install -r etc/requirements.txt <br/>
 pip install --editable . <br/>
 
