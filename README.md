@@ -21,6 +21,9 @@ pip install --editable . <br/>
 *-e, --editable <path/url>   Install a project in editable mode (i.e. setuptools "develop mode")
                               from a local project path or a VCS url.*
                               
+# Plot
+pip install --upgrade mplfinance
+
 # Documentation Development
 pip install -r etc/requirements_docs.txt <br/>
 cd docs <br/>

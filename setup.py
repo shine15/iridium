@@ -32,6 +32,6 @@ setup(
         'Topic :: System :: Distributed Computing',
     ],
     install_requires=[
-        'click',
+        'click', 'pandas', 'numpy', 'matplotlib'
     ]
 )
