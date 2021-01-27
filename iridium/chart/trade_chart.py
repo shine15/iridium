@@ -1,7 +1,6 @@
 from datetime import datetime
 from sys import platform as sys_pf
 from mpl_finance import candlestick2_ohlc
-from matplotlib.ticker import Formatter
 from iridium.data.hdf5 import HDFData, FILE_PATH
 from iridium.utils.trading_calendar import DataFrequency
 from iridium.utils.alg import binary_search_left
@@ -9,7 +8,6 @@ from iridium.utils.alg import binary_search_left
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 
 if sys_pf == 'darwin':
     import matplotlib
@@ -17,21 +15,18 @@ if sys_pf == 'darwin':
 
 
 class TradeChart:
-    class TradeDateFormatter(Formatter):
-        def __init__(self, dates, fmt='%Y-%m-%d'):
-            self.dates = dates
-            self.fmt = fmt
-
-        def __call__(self, x, pos=0):
-            """Return the label for time x at position pos"""
-            ind = int(np.round(x))
-            if ind >= len(self.dates) or ind < 0:
-                return ''
-            return mdates.num2date(self.dates[ind]).strftime(self.fmt)
-
-    def __init__(self, instrument, frequency, start, end, start_offset=0, end_offset=0, rows=1, file_path=FILE_PATH):
+    def __init__(self,
+                 instrument,
+                 frequency,
+                 start,
+                 end,
+                 start_offset=0,
+                 end_offset=0,
+                 rows=1,
+                 file_path=FILE_PATH,
+                 datetime_fmt='%Y-%m-%d'):
         """
-        Prepare data for chart
+        TradeChart init
         :param instrument: instrument name, string
         :param frequency:
         M* - Minute, H - hour, D - day, W - Week, M - Month
@@ -44,7 +39,7 @@ class TradeChart:
         :param end_offset: int
         :param rows: number of sub plots
         :param file_path: HDF5 file path
-        :return: pandas DataFrame
+        :param datetime_fmt
         """
         chart_start = pd.Timestamp(start, unit='s') - pd.Timedelta(start_offset * DataFrequency[frequency].value,
                                                                    unit='s')
@@ -53,16 +48,17 @@ class TradeChart:
         self._rows = rows
         self._axes = None
         self._fig = None
+        self._datetime_fmt = datetime_fmt
 
     def draw_candlestick_chart(self):
         if self._rows > 1:
-            self._fig, self._axes = plt.subplots(self._rows, 1, sharex=True, figsize=(10, 5 * self._rows))
+            self._fig, self._axes = plt.subplots(self._rows, 1, sharex=True, figsize=(20, 10 * self._rows))
         elif self._rows == 1:
-            self._fig, ax = plt.subplots(self._rows, 1, sharex=True, figsize=(10, 5 * self._rows))
+            self._fig, ax = plt.subplots(self._rows, 1, sharex=True, figsize=(20, 10 * self._rows))
             self._axes = np.array([ax])
         ax = self._axes[0]
         line_width = 0.6
-        date_list = [mdates.date2num(datetime.fromtimestamp(date.timestamp())) for date in self._df.index]
+        date_list = [date.strftime(self._datetime_fmt) for date in self._df.index]
         open_list = self._df.open.values
         close_list = self._df.close.values
         high_list = self._df.high.values
@@ -77,8 +73,13 @@ class TradeChart:
             colorup='green',
             colordown='red',
             alpha=1.0)
-        formatter = self.TradeDateFormatter(date_list)
-        ax.xaxis.set_major_formatter(formatter)
+        max_n_ticks = 12
+        step = len(date_list) // max_n_ticks
+        if step < 1:
+            step = 1
+        ax.set_xticks(range(0, len(date_list), step))
+        ax.set_xticklabels(date_list[::step])
+        self._fig.autofmt_xdate()
 
     def add_annotate(self, row, message, x, y, x_offset=15, y_offset=15):
         self._axes[row].annotate(
