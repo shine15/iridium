@@ -1,100 +1,104 @@
 from datetime import datetime
-import bisect
 from sys import platform as sys_pf
+from mpl_finance import candlestick2_ohlc
+from matplotlib.ticker import Formatter
+from iridium.data.hdf5 import HDFData, FILE_PATH
+from iridium.utils.trading_calendar import DataFrequency
+from iridium.utils.alg import binary_search_left
+
 import numpy as np
 import pandas as pd
-
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 if sys_pf == 'darwin':
     import matplotlib
-
     matplotlib.use("TkAgg")
-import matplotlib.pyplot as plt
-from mpl_finance import candlestick2_ohlc
-import matplotlib.dates as mdates
-from matplotlib.ticker import Formatter, MaxNLocator
-from iridium.data.hdf5 import HDFData, FILE_PATH
-from iridium.utils.trading_calendar import DataFrequency
 
 
-class TradeDateFormatter(Formatter):
-    def __init__(self, dates, fmt='%Y-%m-%d'):
-        self.dates = dates
-        self.fmt = fmt
+class TradeChart:
+    class TradeDateFormatter(Formatter):
+        def __init__(self, dates, fmt='%Y-%m-%d'):
+            self.dates = dates
+            self.fmt = fmt
 
-    def __call__(self, x, pos=0):
-        """Return the label for time x at position pos"""
-        ind = int(np.round(x))
-        if ind >= len(self.dates) or ind < 0:
-            return ''
-        return mdates.num2date(self.dates[ind]).strftime(self.fmt)
+        def __call__(self, x, pos=0):
+            """Return the label for time x at position pos"""
+            ind = int(np.round(x))
+            if ind >= len(self.dates) or ind < 0:
+                return ''
+            return mdates.num2date(self.dates[ind]).strftime(self.fmt)
 
+    def __init__(self, instrument, frequency, start, end, start_offset=0, end_offset=0, rows=1, file_path=FILE_PATH):
+        """
+        Prepare data for chart
+        :param instrument: instrument name, string
+        :param frequency:
+        M* - Minute, H - hour, D - day, W - Week, M - Month
+        M1, M2, M4, M5, M10, M15, M30
+        H1, H2, H3, H4, H6, H8, H12,
+        D, W
+        :param start: timestamp
+        :param end: timestamp
+        :param start_offset: int
+        :param end_offset: int
+        :param rows: number of sub plots
+        :param file_path: HDF5 file path
+        :return: pandas DataFrame
+        """
+        chart_start = pd.Timestamp(start, unit='s') - pd.Timedelta(start_offset * DataFrequency[frequency].value,
+                                                                   unit='s')
+        chart_end = pd.Timestamp(end, unit='s') + pd.Timedelta(end_offset * DataFrequency[frequency].value, unit='s')
+        self._df = HDFData.read_hdf(instrument, frequency, chart_start, chart_end, file_path)
+        self._rows = rows
+        self._axes = None
+        self._fig = None
 
-def draw_candlestick_chart(df):
-    fig, ax = plt.subplots(1, 1, sharex=True, figsize=(10, 5))
-    line_width = 0.6
-    date_list = [mdates.date2num(datetime.fromtimestamp(date.timestamp())) for date in df.index]
-    open_list = df.open.values
-    close_list = df.close.values
-    high_list = df.high.values
-    low_list = df.low.values
-    candlestick2_ohlc(
-        ax=ax,
-        opens=open_list,
-        highs=high_list,
-        lows=low_list,
-        closes=close_list,
-        width=line_width,
-        colorup='green',
-        colordown='red',
-        alpha=1.0)
-    formatter = TradeDateFormatter(date_list)
-    ax.xaxis.set_major_formatter(formatter)
-    return fig, ax
+    def draw_candlestick_chart(self):
+        if self._rows > 1:
+            self._fig, self._axes = plt.subplots(self._rows, 1, sharex=True, figsize=(10, 5 * self._rows))
+        elif self._rows == 1:
+            self._fig, ax = plt.subplots(self._rows, 1, sharex=True, figsize=(10, 5 * self._rows))
+            self._axes = np.array([ax])
+        ax = self._axes[0]
+        line_width = 0.6
+        date_list = [mdates.date2num(datetime.fromtimestamp(date.timestamp())) for date in self._df.index]
+        open_list = self._df.open.values
+        close_list = self._df.close.values
+        high_list = self._df.high.values
+        low_list = self._df.low.values
+        candlestick2_ohlc(
+            ax=ax,
+            opens=open_list,
+            highs=high_list,
+            lows=low_list,
+            closes=close_list,
+            width=line_width,
+            colorup='green',
+            colordown='red',
+            alpha=1.0)
+        formatter = self.TradeDateFormatter(date_list)
+        ax.xaxis.set_major_formatter(formatter)
 
+    def add_annotate(self, row, message, x, y, x_offset=15, y_offset=15):
+        self._axes[row].annotate(
+            message,
+            xy=(x, y),
+            xytext=(x_offset, y_offset),
+            textcoords='offset points',
+            arrowprops=dict(arrowstyle="->", connectionstyle="arc3"),
+            color="black"
+        )
 
-def add_annotate(ax, message, x, y, x_offset=15, y_offset=15):
-    ax.annotate(
-        message,
-        xy=(x, y),
-        xytext=(x_offset, y_offset),
-        textcoords='offset points',
-        arrowprops=dict(arrowstyle="->", connectionstyle="arc3"),
-        color="black"
-    )
-
-
-def chart_data(instrument, frequency, start, end, start_offset=0, end_offset=0, file_path=FILE_PATH):
-    """
-    Prepare data for chart
-    :param instrument: instrument name, string
-    :param frequency:
-    M* - Minute, H - hour, D - day, W - Week, M - Month
-    M1, M2, M4, M5, M10, M15, M30
-    H1, H2, H3, H4, H6, H8, H12,
-    D, W
-    :param start: timestamp
-    :param end: timestamp
-    :param start_offset: int
-    :param end_offset: int
-    :param file_path: HDF5 file path
-    :return: pandas DataFrame
-    """
-    chart_start = pd.Timestamp(start, unit='s') - pd.Timedelta(start_offset * DataFrequency[frequency].value, unit='s')
-    chart_end = pd.Timestamp(end, unit='s') + pd.Timedelta(end_offset * DataFrequency[frequency].value, unit='s')
-    return HDFData.read_hdf(instrument, frequency, chart_start, chart_end, file_path)
-
-
-def date_time_index(df, date_time):
-    """
-    find time index for chart
-    :param df: pandas data frame
-    :param date_time: timestamp
-    :return: time index
-    """
-    dt = pd.Timestamp(date_time, unit='s')
-    idx = np.searchsorted(df.index.asi8, dt.value, side="left")
-    return idx
+    def date_time_index(self, date_time):
+        """
+        find time index for chart
+        :param date_time: timestamp
+        :return: time index
+        """
+        dt = pd.Timestamp(date_time, unit='s')
+        idx = binary_search_left(self._df.index.asi8, dt.value)
+        return idx
 
 
 if __name__ == "__main__":
@@ -104,10 +108,8 @@ if __name__ == "__main__":
     end = 1548339840
     start_offset = 0
     end_offset = 0
-    df = chart_data(instrument, freq, start, end, start_offset, end_offset)
-    fig, ax = draw_candlestick_chart(df)
-    x1 = date_time_index(df, start)
-    y1 = df.close[x1]
-    add_annotate(ax, y1, x1, y1)
-
+    chart = TradeChart(instrument, freq, start, end, start_offset, end_offset, 2)
+    chart.draw_candlestick_chart()
+    trade_time_idx = chart.date_time_index(1548339840)
+    chart.add_annotate(0,chart._df.close[trade_time_idx], trade_time_idx,chart._df.close[trade_time_idx])
     plt.show()
