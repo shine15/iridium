@@ -1,10 +1,11 @@
-from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday
-import pandas as pd
-from datetime import timedelta
-import pytz
 from dateutil.tz import tzlocal
 from enum import IntEnum
 from collections import namedtuple
+from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday
+
+from datetime import timedelta
+import pytz
+import pandas as pd
 
 
 class DataFrequency(IntEnum):
@@ -98,13 +99,15 @@ class ForexCalendar(AbstractHolidayCalendar):
         if type(start) == str:
             start_datetime = pd.Timestamp(start, tz=new_york_tz)
         elif type(start) == pd.Timestamp:
-            start_datetime = start.tz_localize(new_york_tz) if not start.tzname() else start.tz_convert(new_york_tz)
+            start_datetime = start.tz_localize(pytz.utc).tz_convert(new_york_tz) \
+                if not start.tzname() else start.tz_convert(new_york_tz)
         else:
             raise TypeError('only support str or datetime-like format')
         if type(end) == str:
             end_datetime = pd.Timestamp(end, tz=new_york_tz)
         elif type(end) == pd.Timestamp:
-            end_datetime = end.tz_localize(new_york_tz) if not end.tzname() else end.tz_convert(new_york_tz)
+            end_datetime = end.tz_localize(pytz.utc).tz_convert(new_york_tz) \
+                if not end.tzname() else end.tz_convert(new_york_tz)
         else:
             raise TypeError('only support str or datetime-like format')
         data_frequency = DataFrequency[frequency]
@@ -128,7 +131,7 @@ class ForexCalendar(AbstractHolidayCalendar):
             return trading_sessions
         elif data_frequency not in (DataFrequency.D, DataFrequency.W):
             all_sessions = []
-            for index, session in enumerate(trading_sessions, start=1):
+            for session in trading_sessions:
                 session_start = session.start
                 session_end = session.end
                 session_opens = pd.date_range(start=session_start, end=session_end,

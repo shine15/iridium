@@ -108,7 +108,7 @@ if __name__ == "__main__":
     end = 1548339840
     start_offset = 0
     end_offset = 0
-    chart = TradeChart(instrument, freq, start, end, start_offset, end_offset, 2)
+    chart = TradeChart(instrument, freq, start, end, start_offset, end_offset, 1)
     chart.draw_candlestick_chart()
     trade_time_idx = chart.date_time_index(1548339840)
     chart.add_annotate(0,chart._df.close[trade_time_idx], trade_time_idx,chart._df.close[trade_time_idx])
