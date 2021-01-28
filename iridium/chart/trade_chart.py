@@ -1,6 +1,7 @@
-from datetime import datetime
 from sys import platform as sys_pf
 from mpl_finance import candlestick2_ohlc
+from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
+                               AutoMinorLocator)
 from iridium.data.hdf5 import HDFData, FILE_PATH
 from iridium.utils.trading_calendar import DataFrequency
 from iridium.utils.alg import binary_search_left
@@ -79,6 +80,8 @@ class TradeChart:
             step = 1
         ax.set_xticks(range(0, len(date_list), step))
         ax.set_xticklabels(date_list[::step])
+        ax.yaxis.set_major_locator(MultipleLocator(0.0005))
+        ax.yaxis.set_minor_locator(MultipleLocator(0.0001))
         self._fig.autofmt_xdate()
 
     def add_annotate(self, row, message, x, y, x_offset=15, y_offset=15):
@@ -101,6 +104,17 @@ class TradeChart:
         idx = binary_search_left(self._df.index.asi8, dt.value)
         return idx
 
+    def draw_horizontal_line(self, value, color, label, row=0):
+        ax = self._axes[0]
+        ax.axhline(y=value, color=color)
+        y_min, y_max = ax.get_ylim()
+        y = (value - y_min) / (y_max - y_min)
+        ax.text(1.0, y, label,
+                verticalalignment='center',
+                horizontalalignment='left',
+                transform=ax.transAxes,
+                color=color)
+
 
 if __name__ == "__main__":
     instrument = "EUR_USD"
@@ -111,6 +125,7 @@ if __name__ == "__main__":
     end_offset = 0
     chart = TradeChart(instrument, freq, start, end, start_offset, end_offset, 1)
     chart.draw_candlestick_chart()
-    trade_time_idx = chart.date_time_index(1548339840)
-    chart.add_annotate(0,chart._df.close[trade_time_idx], trade_time_idx,chart._df.close[trade_time_idx])
+    trade_time_idx = chart.date_time_index(1548108060)
+    chart.add_annotate(0, chart._df.close[trade_time_idx], trade_time_idx, chart._df.close[trade_time_idx])
+    chart.draw_horizontal_line(chart._df.close[trade_time_idx], color='purple', label='{} {}'.format(' PP', 1.223))
     plt.show()
