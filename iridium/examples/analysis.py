@@ -13,7 +13,9 @@ if __name__ == "__main__":
             close_time = transaction.close_time_timestamp
             start_offset = 60
             end_offset = 60
-            chart = TradeChart(instrument, freq, open_time, close_time, start_offset, end_offset, 1)
+            rows = 2
+            height_ratios = [8, 2]
+            chart = TradeChart(instrument, freq, open_time, close_time, start_offset, end_offset, rows, height_ratios)
             open_price = round(transaction.trade_open_price, chart.pip_num)
             close_price = round(transaction.trade_close_price, chart.pip_num)
             chart.draw_candlestick_chart()
@@ -23,5 +25,6 @@ if __name__ == "__main__":
             chart.add_annotate(close_price, close_time_idx, close_price)
             chart.draw_ma(12, 'purple', ma_type='ema')
             chart.draw_ma(26, 'orange', ma_type='ema')
-            chart.add_desc_text('hello')
+            chart.draw_rsi(14, 'blue', row=1)
+            chart.add_desc_text(transaction.to_string())
             plt.show()

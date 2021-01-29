@@ -24,6 +24,7 @@ class TradeChart:
                  start_offset=0,
                  end_offset=0,
                  rows=1,
+                 height_ratios=None,
                  file_path=FILE_PATH,
                  datetime_fmt='%Y-%m-%d'):
         """
@@ -39,6 +40,7 @@ class TradeChart:
         :param start_offset: int
         :param end_offset: int
         :param rows: number of sub plots
+        :param height_ratios: different row height ratios
         :param file_path: HDF5 file path
         :param datetime_fmt
         """
@@ -47,6 +49,7 @@ class TradeChart:
         chart_end = pd.Timestamp(end, unit='s') + pd.Timedelta(end_offset * DataFrequency[frequency].value, unit='s')
         self._df = HDFData.read_hdf(instrument, frequency, chart_start, chart_end, file_path)
         self._rows = rows
+        self._height_ratios = height_ratios
         self._axes = None
         self._fig = None
         self._datetime_fmt = datetime_fmt
@@ -54,9 +57,10 @@ class TradeChart:
 
     def draw_candlestick_chart(self):
         if self._rows > 1:
-            self._fig, self._axes = plt.subplots(self._rows, 1, sharex=True, figsize=(20, 10 * self._rows))
+            self._fig, self._axes = plt.subplots(self._rows, 1, sharex=True, figsize=(20, 10),
+                                                 gridspec_kw={'height_ratios': self._height_ratios})
         elif self._rows == 1:
-            self._fig, ax = plt.subplots(self._rows, 1, sharex=True, figsize=(20, 10 * self._rows))
+            self._fig, ax = plt.subplots(self._rows, 1, sharex=True, figsize=(20, 10))
             self._axes = np.array([ax])
         ax = self._axes[0]
         line_width = 0.6
@@ -75,22 +79,22 @@ class TradeChart:
             colorup='green',
             colordown='red',
             alpha=1.0)
-        max_n_ticks = 12
-        step = len(date_list) // max_n_ticks
-        if step < 1:
-            step = 1
-        ax.set_xticks(range(0, len(date_list), step))
-        ax.set_xticklabels(date_list[::step])
+        ax.set_xticks(range(0, len(date_list), 1))
+        ax.set_xticklabels(date_list[::1])
         ax.yaxis.set_major_locator(MultipleLocator(5 * pow(10, -self.pip_num)))
         ax.yaxis.set_minor_locator(MultipleLocator(pow(10, -self.pip_num)))
+        for _ax in self._axes:
+            _ax.tick_params(axis='both', labelsize=6)
         self._fig.autofmt_xdate()
         self._fig.tight_layout()
+        plt.subplots_adjust(hspace=0)
 
-    def add_annotate(self, message, x, y, row=0, x_offset=15, y_offset=15):
+    def add_annotate(self, message, x, y, row=0, x_offset=20, y_offset=20):
         self._axes[row].annotate(
             message,
             xy=(x, y),
             xytext=(x_offset, y_offset),
+            fontsize=10,
             textcoords='offset points',
             arrowprops=dict(arrowstyle="->", connectionstyle="arc3"),
             color="black"
@@ -115,13 +119,13 @@ class TradeChart:
                 verticalalignment='center',
                 horizontalalignment='left',
                 transform=ax.transAxes,
+                fontsize=8,
                 color=color)
 
     def draw_ma(self, period, color, ma_type='sma', row=0):
         """
         draw moving average line
         :param period
-        :param label:
         :param color:
         :param ma_type: sma or ema
         :param row:
@@ -135,6 +139,23 @@ class TradeChart:
         ax.plot(ma, label="{} {}".format(ma_type.upper(), period), color=color)
         ax.legend(loc='upper left')
 
+    def draw_rsi(self, period, color, row):
+        """
+        draw relative strength index
+        :param period:
+        :param color:
+        :param row:
+        :return:
+        """
+        ax = self._axes[row]
+        rsi = talib.RSI(self._df.close.values, period)
+        ax.plot(rsi, label="RSI", color=color)
+        ax.legend(loc='upper left')
+
     def add_desc_text(self, desc, row=0):
         ax = self._axes[row]
-        ax.text(0.9, 0.9, desc, fontsize=10, transform=ax.transAxes)
+        ax.text(0.8, 0.98, desc,
+                fontsize=8,
+                transform=ax.transAxes,
+                horizontalalignment='left',
+                verticalalignment='top')
