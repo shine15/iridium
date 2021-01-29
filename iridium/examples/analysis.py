@@ -11,8 +11,8 @@ if __name__ == "__main__":
             freq = "D"
             open_time = transaction.open_time_timestamp
             close_time = transaction.close_time_timestamp
-            start_offset = 60
-            end_offset = 60
+            start_offset = 90
+            end_offset = 90
             rows = 2
             height_ratios = [8, 2]
             chart = TradeChart(instrument, freq, open_time, close_time, start_offset, end_offset, rows, height_ratios)

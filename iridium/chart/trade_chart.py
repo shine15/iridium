@@ -1,6 +1,6 @@
 from sys import platform as sys_pf
 from mpl_finance import candlestick2_ohlc
-from matplotlib.ticker import MultipleLocator
+from matplotlib.ticker import AutoLocator, AutoMinorLocator, FormatStrFormatter
 from iridium.data.hdf5 import HDFData, FILE_PATH
 from iridium.utils.trading_calendar import DataFrequency
 from iridium.utils.alg import binary_search_left
@@ -79,10 +79,15 @@ class TradeChart:
             colorup='green',
             colordown='red',
             alpha=1.0)
-        ax.set_xticks(range(0, len(date_list), 1))
-        ax.set_xticklabels(date_list[::1])
-        ax.yaxis.set_major_locator(MultipleLocator(5 * pow(10, -self.pip_num)))
-        ax.yaxis.set_minor_locator(MultipleLocator(pow(10, -self.pip_num)))
+        max_n_ticks = 48
+        step = len(date_list) // max_n_ticks
+        if step < 1:
+            step = 1
+        ax.set_xticks(range(0, len(date_list), step))
+        ax.set_xticklabels(date_list[::step])
+        ax.yaxis.set_major_locator(AutoLocator())
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.{}f'.format(self.pip_num)))
+        ax.yaxis.set_minor_locator(AutoMinorLocator())
         for _ax in self._axes:
             _ax.tick_params(axis='both', labelsize=6)
         self._fig.autofmt_xdate()
