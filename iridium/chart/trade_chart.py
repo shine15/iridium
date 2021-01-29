@@ -1,11 +1,11 @@
 from sys import platform as sys_pf
 from mpl_finance import candlestick2_ohlc
-from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
-                               AutoMinorLocator)
+from matplotlib.ticker import MultipleLocator
 from iridium.data.hdf5 import HDFData, FILE_PATH
 from iridium.utils.trading_calendar import DataFrequency
 from iridium.utils.alg import binary_search_left
 
+import talib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -50,6 +50,7 @@ class TradeChart:
         self._axes = None
         self._fig = None
         self._datetime_fmt = datetime_fmt
+        self.pip_num = 2 if instrument.split('_')[1] == 'JPY' else 4
 
     def draw_candlestick_chart(self):
         if self._rows > 1:
@@ -80,11 +81,12 @@ class TradeChart:
             step = 1
         ax.set_xticks(range(0, len(date_list), step))
         ax.set_xticklabels(date_list[::step])
-        ax.yaxis.set_major_locator(MultipleLocator(0.0005))
-        ax.yaxis.set_minor_locator(MultipleLocator(0.0001))
+        ax.yaxis.set_major_locator(MultipleLocator(5 * pow(10, -self.pip_num)))
+        ax.yaxis.set_minor_locator(MultipleLocator(pow(10, -self.pip_num)))
         self._fig.autofmt_xdate()
+        self._fig.tight_layout()
 
-    def add_annotate(self, row, message, x, y, x_offset=15, y_offset=15):
+    def add_annotate(self, message, x, y, row=0, x_offset=15, y_offset=15):
         self._axes[row].annotate(
             message,
             xy=(x, y),
@@ -105,7 +107,7 @@ class TradeChart:
         return idx
 
     def draw_horizontal_line(self, value, color, label, row=0):
-        ax = self._axes[0]
+        ax = self._axes[row]
         ax.axhline(y=value, color=color)
         y_min, y_max = ax.get_ylim()
         y = (value - y_min) / (y_max - y_min)
@@ -115,17 +117,24 @@ class TradeChart:
                 transform=ax.transAxes,
                 color=color)
 
+    def draw_ma(self, period, color, ma_type='sma', row=0):
+        """
+        draw moving average line
+        :param period
+        :param label:
+        :param color:
+        :param ma_type: sma or ema
+        :param row:
+        :return:
+        """
+        ax = self._axes[row]
+        if ma_type == 'ema':
+            ma = talib.EMA(self._df.close.values, period)
+        else:
+            ma = talib.SMA(self._df.close.values, period)
+        ax.plot(ma, label="{} {}".format(ma_type.upper(), period), color=color)
+        ax.legend(loc='upper left')
 
-if __name__ == "__main__":
-    instrument = "EUR_USD"
-    freq = "D"
-    start = 1548108060
-    end = 1548339840
-    start_offset = 0
-    end_offset = 0
-    chart = TradeChart(instrument, freq, start, end, start_offset, end_offset, 1)
-    chart.draw_candlestick_chart()
-    trade_time_idx = chart.date_time_index(1548108060)
-    chart.add_annotate(0, chart._df.close[trade_time_idx], trade_time_idx, chart._df.close[trade_time_idx])
-    chart.draw_horizontal_line(chart._df.close[trade_time_idx], color='purple', label='{} {}'.format(' PP', 1.223))
-    plt.show()
+    def add_desc_text(self, desc, row=0):
+        ax = self._axes[row]
+        ax.text(0.9, 0.9, desc, fontsize=10, transform=ax.transAxes)
