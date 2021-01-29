@@ -1,9 +1,11 @@
+from random import random
 from sys import platform as sys_pf
 from mpl_finance import candlestick2_ohlc
 from matplotlib.ticker import AutoLocator, AutoMinorLocator, FormatStrFormatter
 from iridium.data.hdf5 import HDFData, FILE_PATH
 from iridium.utils.trading_calendar import DataFrequency
 from iridium.utils.alg import binary_search_left
+from iridium.utils.pivot_point import standard_pivot_pts
 
 import talib
 import numpy as np
@@ -18,7 +20,7 @@ if sys_pf == 'darwin':
 class TradeChart:
     def __init__(self,
                  instrument,
-                 frequency,
+                 freq,
                  start,
                  end,
                  start_offset=0,
@@ -30,7 +32,7 @@ class TradeChart:
         """
         TradeChart init
         :param instrument: instrument name, string
-        :param frequency:
+        :param freq:
         M* - Minute, H - hour, D - day, W - Week, M - Month
         M1, M2, M4, M5, M10, M15, M30
         H1, H2, H3, H4, H6, H8, H12,
@@ -44,16 +46,19 @@ class TradeChart:
         :param file_path: HDF5 file path
         :param datetime_fmt
         """
-        chart_start = pd.Timestamp(start, unit='s') - pd.Timedelta(start_offset * DataFrequency[frequency].value,
+        chart_start = pd.Timestamp(start, unit='s') - pd.Timedelta(start_offset * DataFrequency[freq].value,
                                                                    unit='s')
-        chart_end = pd.Timestamp(end, unit='s') + pd.Timedelta(end_offset * DataFrequency[frequency].value, unit='s')
-        self._df = HDFData.read_hdf(instrument, frequency, chart_start, chart_end, file_path)
+        chart_end = pd.Timestamp(end, unit='s') + pd.Timedelta(end_offset * DataFrequency[freq].value, unit='s')
+        self._df = HDFData.read_hdf(instrument, freq, chart_start, chart_end, file_path)
         self._rows = rows
         self._height_ratios = height_ratios
         self._axes = None
         self._fig = None
         self._datetime_fmt = datetime_fmt
         self.pip_num = 2 if instrument.split('_')[1] == 'JPY' else 4
+        self._freq = DataFrequency[freq]
+        self._instrument = instrument
+        self._file_path = file_path
 
     def draw_candlestick_chart(self):
         if self._rows > 1:
@@ -121,10 +126,10 @@ class TradeChart:
         y_min, y_max = ax.get_ylim()
         y = (value - y_min) / (y_max - y_min)
         ax.text(1.0, y, label,
-                verticalalignment='center',
-                horizontalalignment='left',
+                verticalalignment='bottom',
+                horizontalalignment='right',
                 transform=ax.transAxes,
-                fontsize=8,
+                fontsize=10,
                 color=color)
 
     def draw_ma(self, period, color, ma_type='sma', row=0):
@@ -156,6 +161,30 @@ class TradeChart:
         rsi = talib.RSI(self._df.close.values, period)
         ax.plot(rsi, label="RSI", color=color)
         ax.legend(loc='upper left')
+
+    def draw_pivot_point(self, date_time):
+        if self._freq != DataFrequency.D:
+            raise Exception('To draw pivot point, freq must be set to D')
+        date_time_idx = self.date_time_index(date_time)
+        day_start__time = self._df.index[date_time_idx]
+        day_end_time = day_start__time + pd.tseries.offsets.DateOffset(seconds=DataFrequency.D.value - 1)
+        last_day_close = self._df.close.values[date_time_idx - 1]
+        last_day_low = self._df.low.values[date_time_idx - 1]
+        last_day_high = self._df.high.values[date_time_idx - 1]
+        self._df = HDFData.read_hdf(self._instrument, 'M15', day_start__time, day_end_time, self._file_path)
+        self.draw_candlestick_chart()
+        pivot_pts = standard_pivot_pts(close=last_day_close, high=last_day_high, low=last_day_low)
+        self._draw_pivot_pt_line(pivot_pts.s3, 'S3')
+        self._draw_pivot_pt_line(pivot_pts.r3, 'R3')
+        self._draw_pivot_pt_line(pivot_pts.s2, 'S2')
+        self._draw_pivot_pt_line(pivot_pts.r2, 'R2')
+        self._draw_pivot_pt_line(pivot_pts.s1, 'S1')
+        self._draw_pivot_pt_line(pivot_pts.r1, 'R1')
+        self._draw_pivot_pt_line(pivot_pts.pp, 'PP')
+
+    def _draw_pivot_pt_line(self, value, label):
+        color = random(), random(), random()
+        self.draw_horizontal_line(value, color, '{} {} '.format(label, round(value, self.pip_num)))
 
     def add_desc_text(self, desc, row=0):
         ax = self._axes[row]

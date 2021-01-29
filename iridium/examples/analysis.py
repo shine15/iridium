@@ -3,7 +3,8 @@ from iridium.chart.trade_chart import TradeChart
 import pandas as pd
 import matplotlib.pyplot as plt
 
-if __name__ == "__main__":
+
+def ma_strategy_analysis():
     df = pd.read_csv("/Users/evan/.iridium/report.csv")
     for _, transaction in df.iterrows():
         if transaction.state == 'CLOSED':
@@ -28,3 +29,20 @@ if __name__ == "__main__":
             chart.draw_rsi(14, 'blue', row=1)
             chart.add_desc_text(transaction.to_string())
             plt.show()
+
+
+def pivot_point_analysis():
+    instrument = 'EUR_USD'
+    freq = "D"
+    start = 1606773600
+    end = 1606773600
+    start_offset = 2
+    end_offset = 2
+    chart = TradeChart(instrument, freq, start, end, start_offset, end_offset, datetime_fmt='%Y-%m-%d %H:%M')
+    chart.draw_pivot_point(start)
+    plt.show()
+
+
+if __name__ == "__main__":
+    # ma_strategy_analysis()
+    pivot_point_analysis()

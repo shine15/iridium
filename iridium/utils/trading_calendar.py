@@ -1,9 +1,9 @@
 from dateutil.tz import tzlocal
 from enum import IntEnum
 from collections import namedtuple
+from datetime import timedelta
 from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday
 
-from datetime import timedelta
 import pytz
 import pandas as pd
 
