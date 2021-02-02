@@ -36,10 +36,11 @@ def pivot_point_analysis():
     freq = "D"
     start = 1606773600
     end = 1606773600
-    start_offset = 2
-    end_offset = 2
+    start_offset = 30
+    end_offset = 30
     chart = TradeChart(instrument, freq, start, end, start_offset, end_offset, datetime_fmt='%Y-%m-%d %H:%M')
-    chart.draw_pivot_point(start)
+    chart.draw_pivot_points()
+    # chart.draw_pivot_point(start)
     plt.show()
 
 

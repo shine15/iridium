@@ -183,8 +183,35 @@ class TradeChart:
         self._draw_pivot_pt_line(pivot_pts.pp, 'PP')
 
     def _draw_pivot_pt_line(self, value, label):
-        color = random(), random(), random()
-        self.draw_horizontal_line(value, color, '{} {} '.format(label, round(value, self.pip_num)))
+        self.draw_horizontal_line(value, TradeChart._random_color(), '{} {} '.format(label, round(value, self.pip_num)))
+
+    @staticmethod
+    def _random_color():
+        return random(), random(), random()
+
+    def draw_pivot_points(self):
+        df = self._df.shift(periods=1)
+        pp = pd.Series((df.high + df.low + df.close) / 3)
+        r1 = pd.Series(2 * pp - df.low)
+        s1 = pd.Series(2 * pp - df.high)
+        r2 = pd.Series(pp + (df.high - df.low))
+        s2 = pd.Series(pp - (df.high - df.low))
+        r3 = pd.Series(df.high + 2 * (pp - df.low))
+        s3 = pd.Series(df.low - 2 * (df.high - pp))
+        self._df = self._df.join(pd.DataFrame({'pp': pp, 'r1': r1, 's1': s1, 'r2': r2, 's2': s2, 'r3': r3, 's3': s3}))
+        self.draw_candlestick_chart()
+        self._draw_pivot_pts_line(self._df.s3.values, 'S3')
+        self._draw_pivot_pts_line(self._df.r3.values, 'R3')
+        self._draw_pivot_pts_line(self._df.s2.values, 'S2')
+        self._draw_pivot_pts_line(self._df.r2.values, 'R2')
+        self._draw_pivot_pts_line(self._df.s1.values, 'S1')
+        self._draw_pivot_pts_line(self._df.r1.values, 'R1')
+        self._draw_pivot_pts_line(self._df.pp.values, 'PP')
+        self._axes[0].legend(loc='upper left')
+
+    def _draw_pivot_pts_line(self, ts, label):
+        ax = self._axes[0]
+        ax.plot(ts, label=label, color=TradeChart._random_color(), linestyle='dashed')
 
     def add_desc_text(self, desc, row=0):
         ax = self._axes[row]
