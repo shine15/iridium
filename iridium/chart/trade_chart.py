@@ -213,6 +213,29 @@ class TradeChart:
         ax = self._axes[0]
         ax.plot(ts, label=label, color=TradeChart._random_color(), linestyle='dashed')
 
+    def draw_stochastic(self, row, fastk_period=5, slowk_period=3, slowd_period=3, overbought=80, oversold=20):
+        ax = self._axes[row]
+        slow_k, slow_d = talib.STOCH(self._df.high.values,
+                                     self._df.low.values,
+                                     self._df.close.values,
+                                     fastk_period=fastk_period,
+                                     slowk_period=slowk_period,
+                                     slowk_matype=0,
+                                     slowd_period=slowd_period,
+                                     slowd_matype=0)
+        ax.plot(slow_k, label='%K', color=TradeChart._random_color(), linestyle='dashed')
+        ax.plot(slow_d, label='%D', color=TradeChart._random_color(), linestyle='dashed')
+        self.draw_horizontal_line(overbought, TradeChart._random_color(), '', row=row)
+        self.draw_horizontal_line(oversold, TradeChart._random_color(), '', row=row)
+        ax.legend(loc='upper left')
+
+    def draw_parabolic_sar(self, acceleration=0, maximum=0):
+        ax = self._axes[0]
+        real = talib.SAR(self._df.high.values, self._df.low.values, acceleration=acceleration, maximum=maximum)
+        ax.plot(real, color=TradeChart._random_color(), marker='.', linestyle='')
+
+
+
     def add_desc_text(self, desc, row=0):
         ax = self._axes[row]
         ax.text(0.8, 0.98, desc,
