@@ -120,9 +120,9 @@ class TradeChart:
         idx = binary_search_left(self._df.index.asi8, dt.value)
         return idx
 
-    def draw_horizontal_line(self, value, color, label, row=0):
+    def draw_horizontal_line(self, value, color, label, row=0, linestyle='solid'):
         ax = self._axes[row]
-        ax.axhline(y=value, color=color)
+        ax.axhline(y=value, color=color, linestyle=linestyle)
         y_min, y_max = ax.get_ylim()
         y = (value - y_min) / (y_max - y_min)
         ax.text(1.0, y, label,
@@ -231,10 +231,16 @@ class TradeChart:
 
     def draw_parabolic_sar(self, acceleration=0, maximum=0):
         ax = self._axes[0]
-        real = talib.SAR(self._df.high.values, self._df.low.values, acceleration=acceleration, maximum=maximum)
-        ax.plot(real, color=TradeChart._random_color(), marker='.', linestyle='')
+        sar = talib.SAR(self._df.high.values, self._df.low.values, acceleration=acceleration, maximum=maximum)
+        ax.plot(sar, color=TradeChart._random_color(), marker='.', linestyle='')
 
-
+    def draw_adx(self, row, period=14):
+        ax = self._axes[row]
+        adx = talib.ADX(self._df.high.values, self._df.low.values, self._df.close.values, timeperiod=period)
+        ax.plot(adx, label='ADX', color=TradeChart._random_color())
+        self.draw_horizontal_line(20, color=TradeChart._random_color(), label='', row=row, linestyle='dashed')
+        self.draw_horizontal_line(25, color=TradeChart._random_color(), label='', row=row, linestyle='dashed')
+        ax.legend(loc='upper left')
 
     def add_desc_text(self, desc, row=0):
         ax = self._axes[row]
