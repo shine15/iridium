@@ -44,5 +44,4 @@ brew install gcc <br/>
 xcode-select --install   
 
 # Sample call
-iridium data -t f78990252f4a41e03fcbcb5f6cd80da5-06c80ae3156be464806b5a18e6077359 -s 2016-1-1 -i EUR_USD -i EUR_JPY -i USD_JPY  --tz Australia/Sydney </br>
-iridium data -t f78990252f4a41e03fcbcb5f6cd80da5-06c80ae3156be464806b5a18e6077359 -s 2016-1-1 -i EUR_USD -i EUR_JPY -i USD_JPY  --tz Australia/Sydney --data-frequency M1
+iridium data -t f78990252f4a41e03fcbcb5f6cd80da5-06c80ae3156be464806b5a18e6077359 -s 2021-1-1 -i AUD_CAD -i AUD_CHF -i AUD_JPY -i AUD_NZD -i AUD_SGD -i AUD_USD -i CAD_CHF -i CAD_JPY -i CAD_SGD -i CHF_JPY -i EUR_AUD -i EUR_CAD -i EUR_CHF -i EUR_GBP -i EUR_JPY -i EUR_NZD -i EUR_SGD -i EUR_USD -i GBP_AUD -i GBP_CAD -i GBP_CHF -i GBP_JPY -i GBP_NZD -i GBP_SGD -i GBP_USD -i NZD_CAD -i NZD_CHF -i NZD_JPY -i NZD_SGD -i NZD_USD -i SGD_CHF -i SGD_JPY -i USD_CAD -i USD_CHF -i USD_JPY -i USD_SGD  --tz Australia/Sydney  --data-frequency M1

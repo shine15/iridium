@@ -1,3 +1,4 @@
+import time
 from ...lib.requests import request, HttpMethod
 from ..hdf5 import HDFData
 from iridium.utils.trading_calendar import DataFrequency
@@ -11,6 +12,7 @@ class HDF5DataOanda(HDFData):
     def map_data(self, row, instrument, from_time, to_time, data_frequency):
         while True:
             resp = self._oanda_history_data(instrument, from_time, to_time)
+            time.sleep(2)
             if resp["candles"]:
                 candles = sorted([candle for candle in resp['candles'] if candle['complete']],
                                  key=lambda data: data['time'],

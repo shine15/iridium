@@ -46,17 +46,19 @@ def pivot_point_analysis():
 
 def stochastic_analysis():
     instrument = 'EUR_USD'
-    freq = "D"
+    freq = "M15"
     start = 1606773600
     end = 1606773600
-    start_offset = 120
-    end_offset = 120
+    start_offset = 200
+    end_offset = 200
     height_ratios = [8, 2]
     chart = TradeChart(instrument, freq, start, end, start_offset, end_offset,
                        datetime_fmt='%Y-%m-%d', rows=2, height_ratios=height_ratios)
     chart.draw_candlestick_chart()
     # chart.draw_stochastic(row=1)
     # chart.draw_parabolic_sar(acceleration=0.02, maximum=2.0)
+    chart.draw_ma(12, 'purple', ma_type='ema')
+    chart.draw_ma(26, 'orange', ma_type='ema')
     chart.draw_adx(row=1)
     plt.show()
 
